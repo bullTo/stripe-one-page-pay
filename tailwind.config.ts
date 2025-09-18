@@ -57,6 +57,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        payment: {
+          success: "hsl(var(--payment-success))",
+          error: "hsl(var(--payment-error))",
+        },
+      },
+      backgroundImage: {
+        "payment-gradient": "var(--payment-gradient)",
+        "card-gradient": "var(--card-gradient)",
+      },
+      boxShadow: {
+        "payment": "var(--shadow-payment)",
+        "card": "var(--shadow-card)",
       },
       borderRadius: {
         lg: "var(--radius)",
