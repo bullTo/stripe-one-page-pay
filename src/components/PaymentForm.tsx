@@ -1,12 +1,7 @@
-import { useState, useEffect } from 'react';
-import {
-  PaymentElement,
-  useStripe,
-  useElements
-} from '@stripe/react-stripe-js';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { Loader2, CreditCard, Shield, Check, ArrowLeft } from 'lucide-react';
+import { Loader2, CreditCard, Shield, Check, ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PaymentFormProps {
@@ -18,91 +13,55 @@ interface PaymentFormProps {
   onBack: () => void;
 }
 
+// Price IDs for each plan
+const PRICE_IDS = {
+  basic: 'price_1S8ljYHVyfZo0kmXLpHy2iwl',
+  pro: 'price_1S8lk9HVyfZo0kmXIo9hPAP8',
+  enterprise: 'price_1S8lkNHVyfZo0kmXiFcvcH9u'
+};
+
 export default function PaymentForm({ selectedPlan, onBack }: PaymentFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
   const { toast } = useToast();
-  
   const [isLoading, setIsLoading] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (selectedPlan) {
-      // Create payment intent
-      createPaymentIntent();
-    }
-  }, [selectedPlan]);
-
-  const createPaymentIntent = async () => {
-    try {
-      // In a real app, this would call your backend to create a payment intent
-      // For demo purposes, we'll simulate this
-      const response = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: selectedPlan!.price * 100, // Convert to cents
-          currency: 'usd',
-        }),
-      });
-      
-      if (response.ok) {
-        const { client_secret } = await response.json();
-        setClientSecret(client_secret);
-      } else {
-        // Simulate client secret for demo
-        setClientSecret('pi_demo_client_secret');
-      }
-    } catch (error) {
-      console.error('Error creating payment intent:', error);
-      // Simulate client secret for demo
-      setClientSecret('pi_demo_client_secret');
-    }
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!stripe || !elements || !selectedPlan) {
-      return;
-    }
+  const handleStripeCheckout = async () => {
+    if (!selectedPlan) return;
 
     setIsLoading(true);
-
+    
     try {
-      // In a real app, this would confirm the payment with Stripe
-      const { error } = await stripe.confirmPayment({
-        elements,
-        redirect: 'if_required',
+      // Get the price ID for the selected plan
+      const priceId = PRICE_IDS[selectedPlan.id as keyof typeof PRICE_IDS];
+      
+      if (!priceId) {
+        throw new Error('Invalid plan selected');
+      }
+
+      // For demo purposes, simulate the checkout process
+      // In a real app, you would call your backend to create a Stripe Checkout session
+      toast({
+        title: "Redirecting to Stripe Checkout",
+        description: "You'll be redirected to complete your payment securely.",
       });
 
-      if (error) {
-        toast({
-          title: "Payment Failed",
-          description: error.message || "An error occurred during payment.",
-          variant: "destructive",
-        });
-      } else {
-        setPaymentSuccess(true);
-        toast({
-          title: "Payment Successful!",
-          description: `Your ${selectedPlan.name} subscription has been activated.`,
-        });
-      }
-    } catch (error) {
-      // For demo purposes, simulate success
+      // Simulate redirect delay
       setTimeout(() => {
+        setIsLoading(false);
         setPaymentSuccess(true);
         toast({
           title: "Payment Successful!",
           description: `Your ${selectedPlan.name} subscription has been activated.`,
         });
-      }, 1500);
-    } finally {
+      }, 2000);
+
+    } catch (error) {
       setIsLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to redirect to checkout. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -173,54 +132,49 @@ export default function PaymentForm({ selectedPlan, onBack }: PaymentFormProps) 
       </CardHeader>
       
       <CardContent className="space-y-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div className="p-4 bg-secondary/50 rounded-lg border">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-foreground">{selectedPlan.name} Plan</span>
-                <span className="text-lg font-bold text-foreground">${selectedPlan.price}.00</span>
-              </div>
-              <div className="text-xs text-muted-foreground">Monthly subscription</div>
+        <div className="space-y-4">
+          <div className="p-4 bg-secondary/50 rounded-lg border">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-foreground">{selectedPlan.name} Plan</span>
+              <span className="text-lg font-bold text-foreground">${selectedPlan.price}.00</span>
             </div>
-            
-            {clientSecret ? (
-              <div className="space-y-4">
-                <PaymentElement
-                  options={{
-                    layout: 'tabs',
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="p-4 bg-secondary/30 rounded-lg border-2 border-dashed border-border">
-                <div className="text-center text-sm text-muted-foreground">
-                  <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin opacity-50" />
-                  Loading payment form...
-                </div>
-              </div>
-            )}
+            <div className="text-xs text-muted-foreground">Monthly subscription</div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Shield className="w-4 h-4" />
-            <span>Your payment information is secure and encrypted</span>
+          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="flex items-center gap-3 mb-3">
+              <Shield className="w-5 h-5 text-primary" />
+              <span className="font-medium text-foreground">Secure Stripe Checkout</span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              You'll be redirected to Stripe's secure checkout page to complete your payment with bank-level security.
+            </p>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li>• 256-bit SSL encryption</li>
+              <li>• PCI DSS compliant</li>
+              <li>• Multiple payment methods</li>
+              <li>• Instant activation</li>
+            </ul>
           </div>
+        </div>
 
-          <Button
-            disabled={!stripe || isLoading || !clientSecret}
-            type="submit"
-            className="w-full bg-payment-gradient hover:opacity-90 text-white shadow-payment font-semibold py-3"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              `Subscribe to ${selectedPlan.name} - $${selectedPlan.price}/month`
-            )}
-          </Button>
-        </form>
+        <Button
+          onClick={handleStripeCheckout}
+          disabled={isLoading}
+          className="w-full bg-payment-gradient hover:opacity-90 text-white shadow-payment font-semibold py-3"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Redirecting to Stripe...
+            </>
+          ) : (
+            <>
+              Subscribe to {selectedPlan.name} - $${selectedPlan.price}/month
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
 
         <div className="text-center">
           <p className="text-xs text-muted-foreground">

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise } from '@/lib/stripe';
 import PaymentForm from './PaymentForm';
 import PricingTiers from './PricingTiers';
@@ -55,12 +54,10 @@ export default function CheckoutPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Payment Form */}
             <div className="order-2 lg:order-1">
-              <Elements stripe={stripePromise}>
-                <PaymentForm 
-                  selectedPlan={selectedPlan} 
-                  onBack={handleBackToPlans}
-                />
-              </Elements>
+              <PaymentForm 
+                selectedPlan={selectedPlan} 
+                onBack={handleBackToPlans}
+              />
             </div>
 
             {/* Features & Trust Signals */}
