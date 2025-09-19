@@ -83,7 +83,7 @@ export default function PaymentForm({ selectedPlan, onBack }: PaymentFormProps) 
   const successUrl = `${origin}?subscription=success`;
   const cancelUrl = `${origin}?subscription=cancel`;
 
-      const resp = await fetch('http://localhost:8000/v1/billing/stripe/create-checkout-session', {
+      const resp = await fetch('http://api.swishhost.net:8000/v1/billing/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
