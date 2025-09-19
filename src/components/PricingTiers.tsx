@@ -93,7 +93,7 @@ export default function PricingTiers({ selectedTier, onTierSelect }: PricingTier
               <div className={`w-12 h-12 mx-auto mb-4 rounded-lg flex items-center justify-center ${
                 tier.popular 
                   ? 'bg-payment-gradient text-white' 
-                  : 'bg-primary/10 text-primary'
+                  : 'bg-success/10 text-emerald-600'
               }`}>
                 <Icon className="w-6 h-6" />
               </div>

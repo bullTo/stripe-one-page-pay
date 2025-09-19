@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { stripePromise } from '@/lib/stripe';
 import PaymentForm from './PaymentForm';
 import PricingTiers from './PricingTiers';
 import { Shield, Lock, CreditCard, Star, Users, Zap } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CheckoutPage() {
   const [selectedPlan, setSelectedPlan] = useState<{
@@ -11,6 +12,19 @@ export default function CheckoutPage() {
     price: number;
   } | null>(null);
   const [showPayment, setShowPayment] = useState(false);
+  const { toast } = useToast();
+
+  // On mount, check URL query params for subscription outcome and show toasts
+  useEffect(() => {
+    console.log('PaymentForm mounted, checking URL params for subscription status');
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const subscription = params.get('subscription');
+    if (!subscription) return;
+    if (subscription =="success" || subscription === "cancel")
+      setShowPayment(true);
+    
+  }, [toast]);
 
   const handleTierSelect = (tierId: string, price: number) => {
     const tierNames: { [key: string]: string } = {
@@ -18,7 +32,7 @@ export default function CheckoutPage() {
       pro: 'Pro',
       enterprise: 'Enterprise'
     };
-    
+
     setSelectedPlan({
       id: tierId,
       name: tierNames[tierId],
@@ -40,7 +54,7 @@ export default function CheckoutPage() {
             {showPayment ? 'Secure Checkout' : 'Choose Your Plan'}
           </h1>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            {showPayment 
+            {showPayment
               ? 'Complete your subscription with our secure, encrypted payment system'
               : 'Select the perfect plan for your needs and start your journey today'
             }
@@ -54,8 +68,8 @@ export default function CheckoutPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Payment Form */}
             <div className="order-2 lg:order-1">
-              <PaymentForm 
-                selectedPlan={selectedPlan} 
+              <PaymentForm
+                selectedPlan={selectedPlan}
                 onBack={handleBackToPlans}
               />
             </div>
@@ -66,11 +80,11 @@ export default function CheckoutPage() {
                 <h2 className="text-2xl font-bold text-foreground mb-6">
                   Why choose our secure payment?
                 </h2>
-                
+
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Shield className="w-6 h-6 text-primary" />
+                      <Shield className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground mb-2">Bank-Level Security</h3>
@@ -82,7 +96,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Lock className="w-6 h-6 text-primary" />
+                      <Lock className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground mb-2">PCI Compliant</h3>
@@ -94,7 +108,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <CreditCard className="w-6 h-6 text-primary" />
+                      <CreditCard className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground mb-2">Multiple Payment Methods</h3>
@@ -129,7 +143,7 @@ export default function CheckoutPage() {
         ) : (
           <div className="max-w-6xl mx-auto">
             {/* Pricing Tiers */}
-            <PricingTiers 
+            <PricingTiers
               selectedTier={selectedPlan?.id || null}
               onTierSelect={handleTierSelect}
             />
@@ -139,11 +153,11 @@ export default function CheckoutPage() {
               <h2 className="text-3xl font-bold text-foreground mb-8">
                 Everything you need to succeed
               </h2>
-              
+
               <div className="grid md:grid-cols-3 gap-8">
                 <div className="p-6 bg-card-gradient rounded-lg border shadow-card">
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Zap className="w-6 h-6 text-primary" />
+                    <Zap className="w-6 h-6 text-emerald-600" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">Lightning Fast</h3>
                   <p className="text-muted-foreground">
@@ -153,7 +167,7 @@ export default function CheckoutPage() {
 
                 <div className="p-6 bg-card-gradient rounded-lg border shadow-card">
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Users className="w-6 h-6 text-primary" />
+                    <Users className="w-6 h-6 text-emerald-600" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">Team Collaboration</h3>
                   <p className="text-muted-foreground">
@@ -163,7 +177,7 @@ export default function CheckoutPage() {
 
                 <div className="p-6 bg-card-gradient rounded-lg border shadow-card">
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Star className="w-6 h-6 text-primary" />
+                    <Star className="w-6 h-6 text-emerald-600" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">Premium Support</h3>
                   <p className="text-muted-foreground">

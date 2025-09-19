@@ -39,10 +39,12 @@ All colors MUST be HSL.
     /* Payment specific colors */
     --payment-success: 142 71% 45%;
     --payment-error: 0 84% 60%;
-    --payment-gradient: linear-gradient(135deg, hsl(251 91% 59%) 0%, hsl(262 90% 65%) 100%);
+    --payment-gradient: linear-gradient(135deg,
+        #01a200 0%,
+        #34d058 100%);
     --card-gradient: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(240 100% 99%) 100%);
-    --shadow-payment: 0 10px 30px -10px hsl(251 91% 59% / 0.3);
-    --shadow-card: 0 4px 20px -2px hsl(251 50% 50% / 0.1);
+    --shadow-payment: 0 10px 30px -10px hsl(136 99% 32% / 0.3);
+    --shadow-card: 0 4px 20px -2px hsl(136 99% 32% / 0.1);
 
     --radius: 0.5rem;
 
@@ -93,10 +95,14 @@ All colors MUST be HSL.
     --ring: 251 91% 65%;
 
     /* Dark mode payment colors */
-    --payment-gradient: linear-gradient(135deg, hsl(251 91% 65%) 0%, hsl(262 90% 70%) 100%);
-    --card-gradient: linear-gradient(135deg, hsl(215 25% 10%) 0%, hsl(215 25% 12%) 100%);
-    --shadow-payment: 0 10px 30px -10px hsl(251 91% 65% / 0.4);
-    --shadow-card: 0 4px 20px -2px hsl(0 0% 0% / 0.3);
+    --payment-gradient: linear-gradient(135deg,
+        hsl(136 99% 32%) 0%,
+        hsl(136 70% 45%) 100%);
+    --card-gradient: linear-gradient(135deg,
+        hsl(136 25% 8%) 0%,
+        hsl(136 25% 12%) 100%);
+    --shadow-payment: 0 10px 30px -10px hsl(136 99% 32% / 0.4);
+    --shadow-card: 0 4px 20px -2px hsl(136 60% 15% / 0.3);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

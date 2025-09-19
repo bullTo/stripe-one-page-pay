@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Loader2, CreditCard, Shield, Check, ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { stripePromise } from '@/lib/stripe';
 
 interface PaymentFormProps {
   selectedPlan: {
@@ -15,45 +16,109 @@ interface PaymentFormProps {
 
 // Price IDs for each plan
 const PRICE_IDS = {
-  basic: 'price_1S8ljYHVyfZo0kmXLpHy2iwl',
-  pro: 'price_1S8lk9HVyfZo0kmXIo9hPAP8',
-  enterprise: 'price_1S8lkNHVyfZo0kmXiFcvcH9u'
+  basic: 'price_1S95B2EPUe4GfW8TWa1X8L2x',
+  pro: 'price_1S95BKEPUe4GfW8TMLQ7J7Kl',
+  enterprise: 'price_1S95BaEPUe4GfW8T1NrWL6dQ'
 };
+
+const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMiwiZW1haWwiOiJqYWNrMTBAZXhhbXBsZS5jb20iLCJleHAiOjE3NTgzMTUyODYsInR5cGUiOiJhY2Nlc3MifQ.jU9KP8y-uhwgVuW5PagaI3IXKFr_FteDKMc7WT_m6wc"
 
 export default function PaymentForm({ selectedPlan, onBack }: PaymentFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
+  // On mount, check URL query params for subscription outcome and show toasts
+  useEffect(() => {
+    console.log('PaymentForm mounted, checking URL params for subscription status');
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const subscription = params.get('subscription');
+    console.log('Found subscription param:', subscription);
+    if (!subscription) return;
+
+    if (subscription === 'success') {
+      setPaymentSuccess(true);
+      toast({
+        title: 'Payment Successful!',
+        description: 'Your subscription has been activated.',
+      });
+    } else if (subscription === 'cancel') {
+      toast({
+        title: 'Payment Cancelled',
+        description: 'You cancelled the payment. No changes were made.',
+        variant: 'destructive',
+      });
+    }
+
+    // Remove the subscription param from the URL so the toast doesn't reappear on refresh
+    params.delete('subscription');
+    const newSearch = params.toString();
+    const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+    window.history.replaceState({}, document.title, newUrl);
+  }, [toast]);
+
   const handleStripeCheckout = async () => {
     if (!selectedPlan) return;
 
     setIsLoading(true);
-    
+    console.log('Initiating checkout for plan:', selectedPlan);
     try {
       // Get the price ID for the selected plan
       const priceId = PRICE_IDS[selectedPlan.id as keyof typeof PRICE_IDS];
-      
+      console.log('Using price ID:', priceId);
       if (!priceId) {
         throw new Error('Invalid plan selected');
       }
 
-      // For demo purposes, simulate the checkout process
-      // In a real app, you would call your backend to create a Stripe Checkout session
+      // Call backend to create a Stripe Checkout session
       toast({
-        title: "Redirecting to Stripe Checkout",
+        title: 'Redirecting to Stripe Checkout',
         description: "You'll be redirected to complete your payment securely.",
       });
 
-      // Simulate redirect delay
-      setTimeout(() => {
-        setIsLoading(false);
-        setPaymentSuccess(true);
-        toast({
-          title: "Payment Successful!",
-          description: `Your ${selectedPlan.name} subscription has been activated.`,
-        });
-      }, 2000);
+  // Build success and cancel URLs so backend can create the Stripe session with proper redirects
+  // Use query params so the returning page can show a toast based on ?subscription=success|cancel
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const successUrl = `${origin}?subscription=success`;
+  const cancelUrl = `${origin}?subscription=cancel`;
+
+      const resp = await fetch('http://localhost:8000/v1/billing/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        },
+        body: JSON.stringify({ price_id: priceId, success_url: successUrl, cancel_url: cancelUrl }),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Backend error: ${resp.status} ${text}`);
+      }
+
+      const data = await resp.json();
+
+      // Backend may return either a sessionId (preferred) or a redirect URL
+      const { sessionId, url } = data as { sessionId?: string; url?: string };
+
+      // Use Stripe.js to redirect to checkout if we have a sessionId
+      if (sessionId) {
+        const stripe = await stripePromise;
+        if (!stripe) throw new Error('Stripe.js failed to load');
+
+        const { error } = await stripe.redirectToCheckout({ sessionId });
+        if (error) throw error;
+        // redirectToCheckout will navigate away; nothing more to do here
+      } else if (url) {
+        // Fallback: backend provided a direct URL
+        window.location.href = url;
+      } else {
+        throw new Error('Invalid response from backend');
+      }
+
+      // If we get here, assume redirect happened. Keep spinner on until navigation.
+      setIsLoading(false);
 
     } catch (error) {
       setIsLoading(false);
@@ -96,7 +161,7 @@ export default function PaymentForm({ selectedPlan, onBack }: PaymentFormProps) 
           <div className="space-y-3">
             <Button 
               onClick={onBack}
-              className="w-full bg-payment-gradient hover:opacity-90 text-white shadow-payment"
+              className="w-full hover:opacity-90 text-white shadow-payment"
             >
               Back to Plans
             </Button>
@@ -143,7 +208,7 @@ export default function PaymentForm({ selectedPlan, onBack }: PaymentFormProps) 
 
           <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
             <div className="flex items-center gap-3 mb-3">
-              <Shield className="w-5 h-5 text-primary" />
+              <Shield className="w-5 h-5 text-emerald-600" />
               <span className="font-medium text-foreground">Secure Stripe Checkout</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
